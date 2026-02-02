@@ -1,10 +1,28 @@
 
 export interface UserProfile {
   businessName: string;
+  ownerName?: string;
   address: string;
   gstin: string;
+  pan?: string;
   phone: string;
   email: string;
+  logoUrl?: string;
+  // GST Settings
+  gstEnabled: boolean;
+  defaultGstRate: number;
+  isGstInclusive: boolean;
+  // Invoice Settings
+  invoicePrefix: string;
+  nextNumber: number;
+  // Bank Details
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  upiId?: string;
+  // Terms
+  termsAndConditions?: string;
 }
 
 export interface Product {

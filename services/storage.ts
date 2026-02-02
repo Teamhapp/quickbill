@@ -2,186 +2,184 @@
 import { Invoice, Product, UserProfile, Customer } from '../types';
 
 const KEYS = {
-  USER: 'qb_user_profile',
-  PRODUCTS: 'qb_products',
-  CUSTOMERS: 'qb_customers',
-  INVOICES: 'qb_invoices',
-  LAST_INVOICE: 'qb_last_invoice',
-  AUTH: 'qb_is_logged_in'
+  ACCOUNTS: 'qb_accounts', // Stores { email: { password, profile } }
+  CURRENT_USER_EMAIL: 'qb_current_user',
+  SESSION_TOKEN: 'qb_session_active'
 };
 
-// Sample data from the PDF
-const DEFAULT_USER: UserProfile = {
-  businessName: 'Dhanam Agencies',
-  address: 'Manikandan .P',
+const DEFAULT_PROFILE_TEMPLATE = (businessName: string, email: string): UserProfile => ({
+  businessName: businessName || 'My Business',
+  address: '',
   gstin: '',
-  phone: '+91 98433 93841',
-  email: 'manikandan777rocks@gmail.com'
-};
-
-const DEFAULT_CUSTOMERS: Customer[] = [
-  {
-    id: 'cust-atlas-001',
-    name: 'Atlas builders',
-    address: 'Gem nagar , Karayampalayam, Myilampatti',
-    phone: '+916238638259'
-  }
-];
-
-const DEFAULT_PRODUCTS: Product[] = [
-  {
-    id: 'prod-msand-001',
-    name: 'M sand',
-    unit: 'unit',
-    price: 6000,
-    gstRate: 0
-  },
-  {
-    id: 'prod-jally-001',
-    name: '3/4" jally',
-    unit: 'unit',
-    price: 4375,
-    gstRate: 0
-  }
-];
-
-const DEFAULT_INVOICE: Invoice = {
-  id: 'inv-sample-001',
-  invoiceNumber: 'INV-1',
-  date: '2026-02-02',
-  customerName: 'Atlas builders',
-  customerAddress: 'Gem nagar , Karayampalayam, Myilampatti',
-  customerPhone: '+916238638259',
-  items: [
-    {
-      id: 'item-1',
-      productId: 'prod-msand-001',
-      name: 'M sand',
-      quantity: 3,
-      price: 6000,
-      unit: 'unit',
-      gstRate: 0,
-      total: 18000
-    },
-    {
-      id: 'item-2',
-      productId: 'prod-jally-001',
-      name: '3/4" jally',
-      quantity: 4,
-      price: 4375,
-      unit: 'unit',
-      gstRate: 0,
-      total: 17500
-    }
-  ],
-  subTotal: 35500,
-  totalGst: 0,
-  grandTotal: 35500,
-  status: 'Paid',
-  createdAt: new Date('2026-02-02').getTime()
-};
+  phone: '',
+  email: email,
+  gstEnabled: true,
+  defaultGstRate: 18,
+  isGstInclusive: false,
+  invoicePrefix: 'INV',
+  nextNumber: 1,
+  termsAndConditions: '1. Goods once sold will not be taken back.\n2. Payment should be made within 7 days.\n3. Subject to Jurisdiction.'
+});
 
 export const StorageService = {
-  // Auth
-  isLoggedIn: (): boolean => localStorage.getItem(KEYS.AUTH) === 'true',
-  login: () => localStorage.setItem(KEYS.AUTH, 'true'),
-  logout: () => localStorage.removeItem(KEYS.AUTH),
+  // Auth Logic
+  isLoggedIn: (): boolean => {
+    return localStorage.getItem(KEYS.SESSION_TOKEN) === 'true' && !!localStorage.getItem(KEYS.CURRENT_USER_EMAIL);
+  },
 
-  // User Profile
+  signup: (email: string, password: string, businessName: string): boolean => {
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    if (accounts[email]) return false; // Already exists
+
+    accounts[email] = {
+      password,
+      profile: DEFAULT_PROFILE_TEMPLATE(businessName, email),
+      products: [],
+      customers: [],
+      invoices: []
+    };
+    
+    localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
+    return true;
+  },
+
+  login: (email: string, password: string): boolean => {
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    const user = accounts[email];
+    if (user && user.password === password) {
+      localStorage.setItem(KEYS.SESSION_TOKEN, 'true');
+      localStorage.setItem(KEYS.CURRENT_USER_EMAIL, email);
+      return true;
+    }
+    return false;
+  },
+
+  logout: () => {
+    localStorage.removeItem(KEYS.SESSION_TOKEN);
+    localStorage.removeItem(KEYS.CURRENT_USER_EMAIL);
+  },
+
+  // Scoped Data Access
+  getCurrentUserEmail: () => localStorage.getItem(KEYS.CURRENT_USER_EMAIL),
+
   getUser: (): UserProfile => {
-    const data = localStorage.getItem(KEYS.USER);
-    return data ? JSON.parse(data) : DEFAULT_USER;
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    return accounts[email || '']?.profile || DEFAULT_PROFILE_TEMPLATE('', '');
   },
-  saveUser: (user: UserProfile) => localStorage.setItem(KEYS.USER, JSON.stringify(user)),
 
-  // Products
+  saveUser: (profile: UserProfile) => {
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    if (email && accounts[email]) {
+      accounts[email].profile = profile;
+      localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
+    }
+  },
+
+  getNextInvoiceNumber: (): string => {
+    const profile = StorageService.getUser();
+    const prefix = profile.invoicePrefix || 'INV';
+    const num = profile.nextNumber || 1;
+    return `${prefix}-${num.toString().padStart(3, '0')}`;
+  },
+
   getProducts: (): Product[] => {
-    const data = localStorage.getItem(KEYS.PRODUCTS);
-    return data ? JSON.parse(data) : DEFAULT_PRODUCTS;
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    return accounts[email || '']?.products || [];
   },
-  saveProducts: (products: Product[]) => localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(products)),
-  
-  // Customers
+
+  saveProducts: (products: Product[]) => {
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    if (email && accounts[email]) {
+      accounts[email].products = products;
+      localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
+    }
+  },
+
   getCustomers: (): Customer[] => {
-    const data = localStorage.getItem(KEYS.CUSTOMERS);
-    return data ? JSON.parse(data) : DEFAULT_CUSTOMERS;
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    return accounts[email || '']?.customers || [];
   },
-  saveCustomers: (customers: Customer[]) => localStorage.setItem(KEYS.CUSTOMERS, JSON.stringify(customers)),
 
-  // Invoices
+  saveCustomers: (customers: Customer[]) => {
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    if (email && accounts[email]) {
+      accounts[email].customers = customers;
+      localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
+    }
+  },
+
   getInvoices: (): Invoice[] => {
-    const data = localStorage.getItem(KEYS.INVOICES);
-    return data ? JSON.parse(data) : [DEFAULT_INVOICE];
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    return accounts[email || '']?.invoices || [];
   },
-  saveInvoice: (invoice: Invoice) => {
-    const invoices = StorageService.getInvoices();
-    const updated = [invoice, ...invoices];
-    localStorage.setItem(KEYS.INVOICES, JSON.stringify(updated));
-    localStorage.setItem(KEYS.LAST_INVOICE, JSON.stringify(invoice));
-    
-    // Auto-save/update customer in master
-    const customers = StorageService.getCustomers();
-    const normalizedCustomerName = invoice.customerName.trim().toLowerCase();
-    const customerIndex = customers.findIndex(c => c.name.trim().toLowerCase() === normalizedCustomerName);
-    
-    if (customerIndex > -1) {
-      const existing = customers[customerIndex];
-      const hasChanged = 
-        existing.address.trim() !== invoice.customerAddress.trim() || 
-        (existing.gstin || '').trim() !== (invoice.customerGSTIN || '').trim() ||
-        (existing.phone || '').trim() !== (invoice.customerPhone || '').trim();
 
-      if (hasChanged) {
-        const updatedCustomers = [...customers];
-        updatedCustomers[customerIndex] = {
-          ...existing,
-          address: invoice.customerAddress,
-          gstin: invoice.customerGSTIN,
-          phone: invoice.customerPhone
-        };
-        StorageService.saveCustomers(updatedCustomers);
-      }
-    } else {
-      const newCustomer: Customer = {
+  saveInvoice: (invoice: Invoice) => {
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    if (email && accounts[email]) {
+      accounts[email].invoices = [invoice, ...accounts[email].invoices];
+      accounts[email].lastInvoice = invoice;
+      accounts[email].profile.nextNumber += 1;
+      localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
+      StorageService.syncMasters(invoice);
+    }
+  },
+
+  syncMasters: (invoice: Invoice) => {
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    if (!email || !accounts[email]) return;
+
+    // Sync Customer
+    const customers = accounts[email].customers as Customer[];
+    if (!customers.some(c => c.name.toLowerCase() === invoice.customerName.toLowerCase())) {
+      customers.push({
         id: Math.random().toString(36).substring(2, 11),
-        name: invoice.customerName.trim(),
+        name: invoice.customerName,
         address: invoice.customerAddress,
         gstin: invoice.customerGSTIN,
         phone: invoice.customerPhone
-      };
-      StorageService.saveCustomers([...customers, newCustomer]);
+      });
     }
 
-    // Auto-save/update products in master
-    const currentProducts = StorageService.getProducts();
-    let productsUpdated = false;
-    const newProductsList = [...currentProducts];
-
+    // Sync Products
+    const products = accounts[email].products as Product[];
     invoice.items.forEach(item => {
-      const normalizedItemName = item.name.trim().toLowerCase();
-      const productExists = newProductsList.some(p => p.name.trim().toLowerCase() === normalizedItemName);
-      
-      if (!productExists) {
-        newProductsList.push({
-          id: Math.random().toString(36).substring(2, 11),
-          name: item.name.trim(),
-          unit: item.unit || 'unit',
+      if (!products.some(p => p.name.toLowerCase() === item.name.toLowerCase())) {
+        products.push({
+          id: item.productId.startsWith('custom-') ? Math.random().toString(36).substring(2, 11) : item.productId,
+          name: item.name,
+          unit: item.unit,
           price: item.price,
-          gstRate: item.gstRate || 0
+          gstRate: item.gstRate
         });
-        productsUpdated = true;
       }
     });
 
-    if (productsUpdated) {
-      StorageService.saveProducts(newProductsList);
-    }
+    localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
   },
+
   getLastInvoice: (): Invoice | null => {
-    const data = localStorage.getItem(KEYS.LAST_INVOICE);
-    if (data) return JSON.parse(data);
-    
-    // If no last invoice, return the default sample one as a template
-    return DEFAULT_INVOICE;
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    return accounts[email || '']?.lastInvoice || null;
+  },
+
+  clearAccountData: () => {
+    const email = StorageService.getCurrentUserEmail();
+    const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
+    if (email && accounts[email]) {
+      accounts[email].invoices = [];
+      accounts[email].lastInvoice = null;
+      accounts[email].profile.nextNumber = 1;
+      localStorage.setItem(KEYS.ACCOUNTS, JSON.stringify(accounts));
+    }
   }
 };

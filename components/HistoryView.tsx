@@ -26,6 +26,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ invoices, onPreview }) => {
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase">Inv #</th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase">Date</th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase">Customer</th>
+                <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase">GSTIN</th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase">Phone</th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase text-right">Amount</th>
                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase text-right">Actions</th>
@@ -40,6 +41,9 @@ const HistoryView: React.FC<HistoryViewProps> = ({ invoices, onPreview }) => {
                     <td className="py-4 px-6">
                       <div className="font-semibold text-gray-800">{inv.customerName}</div>
                       <div className="text-xs text-gray-400 truncate max-w-[150px]">{inv.customerAddress}</div>
+                    </td>
+                    <td className="py-4 px-6 text-sm font-mono text-gray-600">
+                      {inv.customerGSTIN || '-'}
                     </td>
                     <td className="py-4 px-6 text-sm text-gray-600">
                       {inv.customerPhone || '-'}
@@ -61,7 +65,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ invoices, onPreview }) => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-20 text-center text-gray-400">
+                  <td colSpan={7} className="py-20 text-center text-gray-400">
                     <svg className="w-12 h-12 mx-auto mb-4 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>

@@ -9,6 +9,7 @@ import ProductMaster from './components/ProductMaster';
 import CustomerMaster from './components/CustomerMaster';
 import ProfileSettings from './components/ProfileSettings';
 import InvoicePDF from './components/InvoicePDF';
+import AuthView from './components/AuthView';
 
 const App: React.FC = () => {
   const [activeView, setView] = useState<View>('login');
@@ -28,11 +29,8 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Native printing trigger logic
   useEffect(() => {
     if (previewInvoice && shouldPrint) {
-      // 500ms stabilization allows React to fully render the PDF content
-      // before the system's print dialog interrupts the execution.
       const timer = setTimeout(() => {
         window.print();
         setShouldPrint(false);
@@ -48,8 +46,7 @@ const App: React.FC = () => {
     setUser(StorageService.getUser());
   };
 
-  const handleLogin = () => {
-    StorageService.login();
+  const onAuthSuccess = () => {
     refreshData();
     setView('invoice');
   };
@@ -57,6 +54,11 @@ const App: React.FC = () => {
   const handleLogout = () => {
     StorageService.logout();
     setView('login');
+    // Clear states for next user
+    setInvoices([]);
+    setProducts([]);
+    setCustomers([]);
+    setPreviewInvoice(null);
   };
 
   const saveInvoice = (inv: Invoice) => {
@@ -67,7 +69,7 @@ const App: React.FC = () => {
       setShouldPrint(true);
     } catch (e) {
       console.error('Failed to save invoice', e);
-      alert('Error: Local storage is full or restricted. Please clear history.');
+      alert('Error: Local storage limit reached. Please clear old invoices.');
     }
   };
 
@@ -87,44 +89,11 @@ const App: React.FC = () => {
   };
 
   if (activeView === 'login') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-indigo-600 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-extrabold text-indigo-800">QuickBill</h1>
-            <p className="text-gray-500">India's Speed-First Billing App</p>
-          </div>
-          
-          <div className="py-8 bg-indigo-50 rounded-xl border border-indigo-100">
-            <svg className="w-16 h-16 mx-auto text-indigo-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            </svg>
-            <p className="font-semibold text-indigo-900">Get Paid 2x Faster</p>
-            <p className="text-xs text-indigo-400">Customers & Products saved automatically</p>
-          </div>
-
-          <button 
-            onClick={handleLogin}
-            className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2"
-          >
-            GET STARTED NOW
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-            </svg>
-          </button>
-          
-          <p className="text-[10px] text-gray-400 uppercase tracking-widest">Built for Indian Wholesalers & Traders</p>
-        </div>
-      </div>
-    );
+    return <AuthView onLogin={onAuthSuccess} />;
   }
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* 
-          PDF Layer: This is always present in the DOM for media queries to find,
-          but visibility is controlled via the .print-only class in index.html
-      */}
       {previewInvoice && <InvoicePDF invoice={previewInvoice} user={user} />}
 
       <Layout activeView={activeView} setView={setView} onLogout={handleLogout}>

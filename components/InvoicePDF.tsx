@@ -10,121 +10,100 @@ interface InvoicePDFProps {
 
 const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, user }) => {
   return (
-    <div className="print-only p-12 bg-white text-black leading-tight w-full max-w-[210mm] mx-auto min-h-[297mm] relative" id="invoice-pdf">
+    <div className="print-only p-12 bg-white text-black leading-tight w-full max-w-[210mm] mx-auto min-h-[297mm] relative font-sans" id="invoice-pdf">
+      
       {/* Header */}
       <div className="flex justify-between items-start mb-10">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-0.5 tracking-tight">{user.businessName}</h1>
-          <p className="text-sm font-medium text-slate-700">{user.address}</p>
-          <div className="flex items-center gap-4 text-xs text-slate-600 mt-2">
+        <div className="space-y-0.5">
+          <h1 className="text-2xl font-bold text-slate-900">{user.businessName}</h1>
+          <p className="text-sm font-semibold">{user.ownerName}</p>
+          <div className="flex items-center gap-3 text-[13px] text-slate-800 font-medium">
             <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
-              {user.phone}
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+              +91 {user.phone}
             </span>
             <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                <polyline points="22,6 12,13 2,6" />
-              </svg>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
               {user.email}
             </span>
           </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-wider">INVOICE</h2>
-        </div>
+        <h2 className="text-xl font-bold tracking-widest text-slate-900 uppercase">INVOICE</h2>
       </div>
 
-      {/* Bill To & Invoice Meta */}
-      <div className="flex justify-between items-start mb-8">
-        <div className="space-y-0.5">
-          <h3 className="text-sm font-bold text-slate-900 mb-1">BILL TO</h3>
-          <p className="text-sm font-bold text-slate-800 leading-tight">{invoice.customerName}</p>
-          <p className="text-sm text-slate-700 whitespace-pre-line max-w-[250px]">{invoice.customerAddress}</p>
-          {invoice.customerPhone && (
-            <div className="flex items-center gap-1 mt-1 text-sm text-slate-700">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
-              {invoice.customerPhone}
-            </div>
-          )}
+      {/* Bill To & Details */}
+      <div className="flex justify-between mb-10 items-start">
+        <div className="max-w-xs">
+          <h3 className="text-[13px] font-bold uppercase text-slate-900 mb-2">BILL TO</h3>
+          <p className="text-[14px] font-bold">{invoice.customerName}</p>
+          <p className="text-[13px] text-slate-700 leading-relaxed">{invoice.customerAddress}</p>
+          <p className="text-[13px] text-slate-700 font-medium mt-1 flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+            +91{invoice.customerPhone}
+          </p>
         </div>
-        <div className="text-right space-y-1.5 text-sm">
+        <div className="text-right space-y-1.5">
           <div className="flex justify-end gap-10">
-            <span className="font-bold text-slate-900">Invoice#</span>
-            <span className="text-slate-700 font-medium min-w-[80px]">{invoice.invoiceNumber}</span>
+            <span className="text-[13px] font-bold text-slate-900">Invoice#</span>
+            <span className="text-[13px] min-w-[80px] text-right">{invoice.invoiceNumber}</span>
           </div>
           <div className="flex justify-end gap-10">
-            <span className="font-bold text-slate-900">Invoice Date:</span>
-            <span className="text-slate-700 font-medium min-w-[80px]">{new Date(invoice.date).toLocaleDateString('en-GB')}</span>
+            <span className="text-[13px] font-bold text-slate-900">Invoice Date:</span>
+            <span className="text-[13px] min-w-[80px] text-right">{new Date(invoice.date).toLocaleDateString('en-GB')}</span>
           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <table className="w-full border-t border-b border-slate-400 mb-4">
+      {/* Product Table */}
+      <table className="w-full mb-6">
         <thead>
-          <tr className="bg-slate-50 border-b border-slate-200">
-            <th className="py-2 px-2 text-left text-[11px] font-bold text-slate-800 w-10">#</th>
-            <th className="py-2 px-3 text-left text-[11px] font-bold text-slate-800">DESCRIPTION</th>
-            <th className="py-2 px-2 text-center text-[11px] font-bold text-slate-800 w-24">QTY</th>
-            <th className="py-2 px-3 text-right text-[11px] font-bold text-slate-800 w-32">PRICE</th>
-            <th className="py-2 px-3 text-right text-[11px] font-bold text-slate-800 w-32">TOTAL</th>
+          <tr className="bg-slate-50 border-t border-b border-slate-300 text-[12px] font-bold text-slate-900 uppercase">
+            <th className="py-2.5 px-2 text-left w-10">#</th>
+            <th className="py-2.5 px-2 text-left">DESCRIPTION</th>
+            <th className="py-2.5 px-2 text-center w-24">QTY</th>
+            <th className="py-2.5 px-2 text-right w-32">PRICE</th>
+            <th className="py-2.5 px-2 text-right w-32">TOTAL</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-200">
           {invoice.items.map((item, index) => (
-            <tr key={item.id}>
-              <td className="py-4 px-2 text-sm text-slate-800 align-top">{index + 1}</td>
-              <td className="py-4 px-3 text-sm font-bold text-slate-900 align-top">{item.name}</td>
-              <td className="py-4 px-2 text-center text-sm text-slate-800 align-top">
-                <div className="font-bold">{item.quantity}</div>
-                <div className="text-[10px] text-slate-500 font-medium">{item.unit || 'unit'}</div>
+            <tr key={item.id} className="text-[13px] font-medium text-slate-900">
+              <td className="py-5 px-2 align-top">{index + 1}</td>
+              <td className="py-5 px-2 align-top">
+                <div className="font-bold">{item.name}</div>
               </td>
-              <td className="py-4 px-3 text-right text-sm text-slate-800 align-top">
-                {item.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              <td className="py-5 px-2 text-center align-top">
+                <div className="font-medium">{item.quantity}</div>
+                <div className="text-[11px] text-slate-500 font-bold mt-0.5">{item.unit}</div>
               </td>
-              <td className="py-4 px-3 text-right text-sm font-bold text-slate-900 align-top">
-                {item.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-              </td>
+              <td className="py-5 px-2 text-right align-top">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td className="py-5 px-2 text-right font-bold align-top">₹{item.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Footer Totals */}
-      <div className="flex justify-between items-start mb-12">
-        <div className="max-w-[340px]">
-          <h4 className="text-[11px] font-bold text-slate-900 mb-1 tracking-tight">AMOUNT IN WORDS:</h4>
-          <p className="text-[12px] font-medium leading-snug text-slate-800">
-            {numberToWords(invoice.grandTotal)}
-          </p>
+      {/* Summary Section */}
+      <div className="flex justify-between items-start mt-8 pt-4 border-t border-slate-400">
+        <div className="max-w-[320px]">
+          <h4 className="text-[12px] font-bold uppercase text-slate-900 mb-1">AMOUNT IN WORDS:</h4>
+          <p className="text-[13px] font-bold leading-snug">{numberToWords(invoice.grandTotal)}</p>
         </div>
-        <div className="w-full max-w-[300px]">
-          <div className="bg-slate-100 border border-slate-300 flex items-center justify-between px-4 py-3">
-            <span className="text-xs font-bold text-slate-900">GRAND TOTAL</span>
-            <span className="text-base font-bold text-slate-900">₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-          </div>
+        
+        <div className="w-[350px] bg-slate-50 border border-slate-200 flex justify-between items-center px-6 py-4">
+          <span className="text-[14px] font-black uppercase tracking-tight">GRAND TOTAL</span>
+          <span className="text-[16px] font-black">₹{invoice.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
         </div>
       </div>
 
-      {/* Signatures */}
-      <div className="mt-16">
-        <div className="text-right">
-          <p className="text-sm font-bold text-slate-900 uppercase">For, {user.businessName.toUpperCase()}</p>
-        </div>
-        <div className="mt-20 flex justify-end">
-          <div className="text-center w-56 border-t border-transparent pt-1">
-            <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">AUTHORIZED SIGNATURE</p>
-          </div>
-        </div>
+      {/* Signature Section */}
+      <div className="mt-20 flex flex-col items-end text-right">
+        <p className="text-[14px] font-bold mb-20">For, {user.businessName.toUpperCase()}</p>
+        <p className="text-[11px] font-bold uppercase text-slate-400 border-t border-transparent inline-block tracking-widest">AUTHORIZED SIGNATURE</p>
       </div>
 
-      {/* Page Numbering */}
-      <div className="absolute bottom-8 right-12 text-slate-400 text-[10px] font-medium">
+      {/* Page Marker */}
+      <div className="absolute bottom-8 right-12 text-[11px] text-slate-400 font-medium">
         Page 1 of 1
       </div>
     </div>
