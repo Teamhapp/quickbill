@@ -1,0 +1,5 @@
+{
+  "name": "QuickBill India",
+  "description": "A high-speed invoice generator for Indian businesses. Features product masters, smart search, and auto-loading last invoice to ensure billing takes less than 30 seconds.",
+  "requestFramePermissions": []
+}
