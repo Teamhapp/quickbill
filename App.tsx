@@ -16,17 +16,22 @@ const App: React.FC = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [user, setUser] = useState<UserProfile>(StorageService.getUser());
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [shouldPrint, setShouldPrint] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (StorageService.isLoggedIn()) {
-      setView('invoice');
-      refreshData();
-    } else {
-      setView('login');
-    }
+    const init = async () => {
+      if (StorageService.isLoggedIn()) {
+        await refreshData();
+        setView('invoice');
+      } else {
+        setView('login');
+      }
+      setLoading(false);
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -39,53 +44,73 @@ const App: React.FC = () => {
     }
   }, [previewInvoice, shouldPrint]);
 
-  const refreshData = () => {
-    setInvoices(StorageService.getInvoices());
-    setProducts(StorageService.getProducts());
-    setCustomers(StorageService.getCustomers());
-    setUser(StorageService.getUser());
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const [u, invs, prods, custs] = await Promise.all([
+        StorageService.getUser(),
+        StorageService.getInvoices(),
+        StorageService.getProducts(),
+        StorageService.getCustomers()
+      ]);
+      setUser(u);
+      setInvoices(invs);
+      setProducts(prods);
+      setCustomers(custs);
+    } catch (e) {
+      console.error("Data refresh failed", e);
+    }
+    setLoading(false);
   };
 
-  const onAuthSuccess = () => {
-    refreshData();
+  const onAuthSuccess = async () => {
+    await refreshData();
     setView('invoice');
   };
 
   const handleLogout = () => {
     StorageService.logout();
     setView('login');
-    // Clear states for next user
     setInvoices([]);
     setProducts([]);
     setCustomers([]);
     setPreviewInvoice(null);
+    setUser(null);
   };
 
-  const saveInvoice = (inv: Invoice) => {
+  const saveInvoice = async (inv: Invoice) => {
+    setLoading(true);
     try {
-      StorageService.saveInvoice(inv);
-      refreshData();
+      await StorageService.saveInvoice(inv);
+      await refreshData();
       setPreviewInvoice(inv);
       setShouldPrint(true);
     } catch (e) {
       console.error('Failed to save invoice', e);
-      alert('Error: Local storage limit reached. Please clear old invoices.');
+      alert('Error: Local storage limit or network error.');
     }
+    setLoading(false);
   };
 
-  const updateProducts = (newProducts: Product[]) => {
-    StorageService.saveProducts(newProducts);
+  const updateProducts = async (newProducts: Product[]) => {
+    setLoading(true);
+    await StorageService.saveProducts(newProducts);
     setProducts(newProducts);
+    setLoading(false);
   };
 
-  const updateCustomers = (newCustomers: Customer[]) => {
-    StorageService.saveCustomers(newCustomers);
+  const updateCustomers = async (newCustomers: Customer[]) => {
+    setLoading(true);
+    await StorageService.saveCustomers(newCustomers);
     setCustomers(newCustomers);
+    setLoading(false);
   };
 
-  const updateUser = (newUser: UserProfile) => {
-    StorageService.saveUser(newUser);
+  const updateUser = async (newUser: UserProfile) => {
+    setLoading(true);
+    await StorageService.saveUser(newUser);
     setUser(newUser);
+    setLoading(false);
   };
 
   if (activeView === 'login') {
@@ -94,11 +119,18 @@ const App: React.FC = () => {
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {previewInvoice && <InvoicePDF invoice={previewInvoice} user={user} />}
+      {loading && (
+        <div className="no-print fixed inset-0 z-[200] bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center">
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="font-black text-xs uppercase tracking-widest text-indigo-600">Syncing Workspace...</p>
+        </div>
+      )}
+
+      {previewInvoice && user && <InvoicePDF invoice={previewInvoice} user={user} />}
 
       <Layout activeView={activeView} setView={setView} onLogout={handleLogout}>
         <div className="no-print">
-          {activeView === 'invoice' && (
+          {activeView === 'invoice' && user && (
             <InvoiceForm 
               onSave={saveInvoice} 
               user={user} 
@@ -117,15 +149,15 @@ const App: React.FC = () => {
             />
           )}
           
-          {activeView === 'products' && (
-            <ProductMaster products={products} onSave={updateProducts} />
+          {activeView === 'products' && user && (
+            <ProductMaster products={products} onSave={updateProducts} user={user} />
           )}
 
           {activeView === 'customers' && (
             <CustomerMaster customers={customers} onSave={updateCustomers} />
           )}
           
-          {activeView === 'profile' && (
+          {activeView === 'profile' && user && (
             <ProfileSettings user={user} onSave={updateUser} />
           )}
         </div>

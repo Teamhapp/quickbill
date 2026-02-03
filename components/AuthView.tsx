@@ -14,35 +14,32 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      if (isSignup) {
-        if (!email || !password || !businessName) {
-          setError('Please fill all fields');
-          setLoading(false);
-          return;
-        }
-        const success = StorageService.signup(email, password, businessName);
-        if (success) {
-          StorageService.login(email, password);
-          onLogin();
-        } else {
-          setError('Email already exists');
-        }
-      } else {
-        const success = StorageService.login(email, password);
-        if (success) {
-          onLogin();
-        } else {
-          setError('Invalid credentials');
-        }
+    if (isSignup) {
+      if (!email || !password || !businessName) {
+        setError('Please fill all fields');
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-    }, 600);
+      const success = await StorageService.signup(email, password, businessName);
+      if (success) {
+        onLogin();
+      } else {
+        setError('Signup failed (Email exists or Cloud Error)');
+      }
+    } else {
+      const success = await StorageService.login(email, password);
+      if (success) {
+        onLogin();
+      } else {
+        setError('Invalid credentials or MongoDB configuration error');
+      }
+    }
+    setLoading(false);
   };
 
   return (
@@ -54,12 +51,12 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">QuickBill Pro</h1>
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Precision Invoicing Engine</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">QuickBill India</h1>
+          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Cloud-Sync Invoicing Engine</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-4 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 animate-bounce">
+          <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 animate-bounce">
              {error}
           </div>
         )}
@@ -97,9 +94,9 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-2xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2 border-b-4 border-indigo-800 uppercase tracking-widest text-sm`}
+            className={`w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-2xl hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2 border-b-4 border-indigo-800 uppercase tracking-widest text-sm disabled:opacity-50`}
           >
-            {loading ? 'Processing...' : isSignup ? 'Create Account' : 'Access Workspace'}
+            {loading ? 'Authenticating...' : isSignup ? 'Register Workspace' : 'Enter Suite'}
           </button>
         </form>
 
@@ -108,7 +105,7 @@ const AuthView: React.FC<AuthViewProps> = ({ onLogin }) => {
             onClick={() => { setIsSignup(!isSignup); setError(''); }}
             className="text-slate-400 font-black text-xs uppercase tracking-widest hover:text-indigo-600 transition-colors"
           >
-            {isSignup ? 'Already Registered? Sign In' : 'New? Register Now'}
+            {isSignup ? 'Registered? Back to Login' : 'New? Secure your Cloud Store'}
           </button>
         </div>
       </div>

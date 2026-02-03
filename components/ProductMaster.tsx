@@ -7,10 +7,11 @@ import { StorageService } from '../services/storage';
 interface ProductMasterProps {
   products: Product[];
   onSave: (products: Product[]) => void;
+  // Use a user profile prop to avoid async StorageService.getUser() call in render
+  user: UserProfile;
 }
 
-const ProductMaster: React.FC<ProductMasterProps> = ({ products, onSave }) => {
-  const user: UserProfile = StorageService.getUser();
+const ProductMaster: React.FC<ProductMasterProps> = ({ products, onSave, user }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});

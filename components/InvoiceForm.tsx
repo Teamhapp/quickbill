@@ -20,7 +20,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, user, products, custo
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
   const [items, setItems] = useState<InvoiceItem[]>([]);
-  const [invoiceNumber, setInvoiceNumber] = useState(StorageService.getNextInvoiceNumber());
+  // Use user prop to derive initial invoice number
+  const [invoiceNumber, setInvoiceNumber] = useState(`${user.invoicePrefix}-${user.nextNumber.toString().padStart(3, '0')}`);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [taxEnabled, setTaxEnabled] = useState(user.taxEnabled);
   
@@ -29,6 +30,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, user, products, custo
   const [showProductDropdown, setShowProductDropdown] = useState(false);
 
   const productInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync invoice number when user profile updates (e.g., after saving an invoice in App.tsx)
+  useEffect(() => {
+    setInvoiceNumber(`${user.invoicePrefix}-${user.nextNumber.toString().padStart(3, '0')}`);
+  }, [user.invoicePrefix, user.nextNumber]);
 
   useEffect(() => {
     const lastInvoice = StorageService.getLastInvoice();
@@ -204,7 +210,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, user, products, custo
     };
     
     onSave(invoice);
-    setInvoiceNumber(StorageService.getNextInvoiceNumber());
+    // Removed direct call to getNextInvoiceNumber as it is now handled by the useEffect watching user prop
   };
 
   return (
