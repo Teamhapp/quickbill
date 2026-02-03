@@ -1,36 +1,41 @@
 
 export interface UserProfile {
   businessName: string;
-  ownerName?: string;
   address: string;
-  gstin: string;
-  pan?: string;
+  gstin: string;      
+  pan?: string; 
   phone: string;
   email: string;
   logoUrl?: string;
-  // GST Settings
-  gstEnabled: boolean;
-  defaultGstRate: number;
-  isGstInclusive: boolean;
+  currency: string;    
+  currencySymbol: string; 
+  // Tax Settings
+  taxEnabled: boolean;
+  defaultTaxRate: number;
+  isTaxInclusive: boolean;
+  state: string;    
   // Invoice Settings
   invoicePrefix: string;
   nextNumber: number;
+  availableUnits: string[]; 
   // Bank Details
   bankName?: string;
   accountName?: string;
   accountNumber?: string;
-  ifscCode?: string;
-  upiId?: string;
+  ifscCode?: string; 
+  upiId?: string;       
   // Terms
   termsAndConditions?: string;
+  signatureTitle?: string;
 }
 
 export interface Product {
   id: string;
   name: string;
+  hsnCode?: string;
   unit: string;
   price: number;
-  gstRate: number;
+  taxRate: number;
 }
 
 export interface Customer {
@@ -39,16 +44,18 @@ export interface Customer {
   address: string;
   gstin?: string;
   phone?: string;
+  state?: string;
 }
 
 export interface InvoiceItem {
   id: string;
   productId: string;
   name: string;
+  hsnCode?: string;
   quantity: number;
   price: number;
   unit: string;
-  gstRate: number;
+  taxRate: number;
   total: number;
 }
 
@@ -58,14 +65,17 @@ export interface Invoice {
   date: string;
   customerName: string;
   customerAddress: string;
-  customerGSTIN?: string;
+  customerGstin?: string;
   customerPhone?: string;
+  customerState?: string;
   items: InvoiceItem[];
   subTotal: number;
-  totalGst: number;
+  totalTax: number;
   grandTotal: number;
   status: 'Draft' | 'Sent' | 'Paid';
   createdAt: number;
+  taxEnabled: boolean;
+  currencySymbol: string;
 }
 
 export type View = 'invoice' | 'history' | 'products' | 'customers' | 'profile' | 'login';

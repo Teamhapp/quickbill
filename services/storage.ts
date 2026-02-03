@@ -2,7 +2,7 @@
 import { Invoice, Product, UserProfile, Customer } from '../types';
 
 const KEYS = {
-  ACCOUNTS: 'qb_accounts', // Stores { email: { password, profile } }
+  ACCOUNTS: 'qb_accounts',
   CURRENT_USER_EMAIL: 'qb_current_user',
   SESSION_TOKEN: 'qb_session_active'
 };
@@ -13,23 +13,27 @@ const DEFAULT_PROFILE_TEMPLATE = (businessName: string, email: string): UserProf
   gstin: '',
   phone: '',
   email: email,
-  gstEnabled: true,
-  defaultGstRate: 18,
-  isGstInclusive: false,
+  currency: 'INR',
+  currencySymbol: '₹',
+  taxEnabled: true,
+  defaultTaxRate: 18,
+  isTaxInclusive: false,
+  state: '',
   invoicePrefix: 'INV',
   nextNumber: 1,
-  termsAndConditions: '1. Goods once sold will not be taken back.\n2. Payment should be made within 7 days.\n3. Subject to Jurisdiction.'
+  availableUnits: ['pcs', 'kg', 'nos', 'm', 'bags', 'units', 'box', 'set', 'sqft', 'ton'],
+  signatureTitle: 'For ' + (businessName || 'My Business'),
+  termsAndConditions: '1. Goods once sold will not be taken back.\n2. Payment should be made by due date.\n3. Interest @ 18% p.a. will be charged for delayed payment.'
 });
 
 export const StorageService = {
-  // Auth Logic
   isLoggedIn: (): boolean => {
     return localStorage.getItem(KEYS.SESSION_TOKEN) === 'true' && !!localStorage.getItem(KEYS.CURRENT_USER_EMAIL);
   },
 
   signup: (email: string, password: string, businessName: string): boolean => {
     const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
-    if (accounts[email]) return false; // Already exists
+    if (accounts[email]) return false;
 
     accounts[email] = {
       password,
@@ -59,13 +63,19 @@ export const StorageService = {
     localStorage.removeItem(KEYS.CURRENT_USER_EMAIL);
   },
 
-  // Scoped Data Access
   getCurrentUserEmail: () => localStorage.getItem(KEYS.CURRENT_USER_EMAIL),
 
   getUser: (): UserProfile => {
     const email = StorageService.getCurrentUserEmail();
     const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
-    return accounts[email || '']?.profile || DEFAULT_PROFILE_TEMPLATE('', '');
+    const profile = accounts[email || '']?.profile;
+    
+    if (profile && !profile.currency) {
+      profile.currency = 'INR';
+      profile.currencySymbol = '₹';
+    }
+    
+    return profile || DEFAULT_PROFILE_TEMPLATE('', '');
   },
 
   saveUser: (profile: UserProfile) => {
@@ -81,7 +91,7 @@ export const StorageService = {
     const profile = StorageService.getUser();
     const prefix = profile.invoicePrefix || 'INV';
     const num = profile.nextNumber || 1;
-    return `${prefix}-${num.toString().padStart(3, '0')}`;
+    return `${prefix}-${num.toString().padStart(4, '0')}`;
   },
 
   getProducts: (): Product[] => {
@@ -137,28 +147,45 @@ export const StorageService = {
     const accounts = JSON.parse(localStorage.getItem(KEYS.ACCOUNTS) || '{}');
     if (!email || !accounts[email]) return;
 
-    // Sync Customer
     const customers = accounts[email].customers as Customer[];
-    if (!customers.some(c => c.name.toLowerCase() === invoice.customerName.toLowerCase())) {
+    const invName = invoice.customerName.trim();
+    const invPhone = invoice.customerPhone?.trim();
+    
+    const existingCustIdx = customers.findIndex(c => 
+      c.name.trim().toLowerCase() === invName.toLowerCase() && 
+      (!invPhone || !c.phone || c.phone.trim() === invPhone)
+    );
+    
+    if (existingCustIdx > -1) {
+      customers[existingCustIdx] = {
+        ...customers[existingCustIdx],
+        address: invoice.customerAddress || customers[existingCustIdx].address,
+        gstin: invoice.customerGstin || customers[existingCustIdx].gstin,
+        phone: invoice.customerPhone || customers[existingCustIdx].phone,
+        state: invoice.customerState || customers[existingCustIdx].state
+      };
+    } else {
       customers.push({
         id: Math.random().toString(36).substring(2, 11),
         name: invoice.customerName,
         address: invoice.customerAddress,
-        gstin: invoice.customerGSTIN,
-        phone: invoice.customerPhone
+        gstin: invoice.customerGstin,
+        phone: invoice.customerPhone,
+        state: invoice.customerState
       });
     }
 
-    // Sync Products
     const products = accounts[email].products as Product[];
     invoice.items.forEach(item => {
-      if (!products.some(p => p.name.toLowerCase() === item.name.toLowerCase())) {
+      const existingProdIdx = products.findIndex(p => p.name.trim().toLowerCase() === item.name.trim().toLowerCase());
+      if (existingProdIdx === -1) {
         products.push({
           id: item.productId.startsWith('custom-') ? Math.random().toString(36).substring(2, 11) : item.productId,
           name: item.name,
+          hsnCode: item.hsnCode,
           unit: item.unit,
           price: item.price,
-          gstRate: item.gstRate
+          taxRate: item.taxRate
         });
       }
     });
